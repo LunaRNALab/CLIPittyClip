@@ -214,6 +214,7 @@ Run `CLIPittyClip.sh --help` for full usage.
 | Short | Long | Type | Default | Description |
 |-------|------|------|---------|-------------|
 | — | `--peak-caller` | str | homer | Peak caller: `homer` or `ctk` (tag2peak.pl) |
+| — | `--homer-args` | str | — | Additional HOMER `findPeaks` arguments (quoted string) |
 | — | `--ctk-args` | str | — | Additional `tag2peak.pl` arguments (quoted string) |
 
 ### CTK Analysis Options
