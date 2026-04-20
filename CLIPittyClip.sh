@@ -32,6 +32,7 @@ PEAK_SIZE=20
 FRAG_LEN=25
 PEAK_CALLER="homer" # Peak caller: homer (default) or ctk
 ADV_CTK_ARGS=""    # Additional arguments for tag2peak.pl
+ADV_HOMER_ARGS=""  # Additional arguments for HOMER findPeaks
 MISMATCH_MAX=2 # STAR default
 # ------------------------------------------------------------------
 # Usage
@@ -70,6 +71,7 @@ function show_usage {
     echo ""
     echo "ANALYSIS OPTIONS:"
     echo "  --peak-caller <str>      Peak caller: homer (default) or ctk
+  --homer-args <str>       Additional HOMER findPeaks arguments (quoted string)
   --ctk-args <str>         Additional tag2peak.pl arguments (quoted string)
   --run-ctk                Enable full CTK CIMS+CITS analysis"
     echo "  --run-cims               Enable CIMS analysis (mutation sites only)"
@@ -166,6 +168,7 @@ while [[ $# -gt 0 ]]; do
         -a|--adapter) ADAPTER_3="$2"; shift 2 ;;
         -k|--keep) KEEP_INTERMEDIATE="yes"; shift ;;
         --peak-caller) PEAK_CALLER=$(echo "$2" | tr '[:upper:]' '[:lower:]'); shift 2 ;;
+        --homer-args) ADV_HOMER_ARGS="$2"; shift 2 ;;
         --ctk-args) ADV_CTK_ARGS="$2"; shift 2 ;;
         --run-cims) RUN_CIMS=true; RUN_CTK="yes"; shift ;;
         --run-cits) RUN_CITS=true; RUN_CTK="yes"; shift ;;
@@ -791,6 +794,7 @@ if [[ -n "$INPUT_DIR" ]]; then
     PEAK_LOG="$OUTPUT_ROOT/$DIR_PEAK_LOGS/Combined_PeakCalling.log"
     
     PEAK_CMD="$SCRIPT_DIR/PEAKittyPeak.sh -i \"$BED_DIR\" --aggregate -n \"Combined\" -p \"$PEAK_DIST\" -z \"$PEAK_SIZE\" -f \"$FRAG_LEN\" --peak-caller \"$PEAK_CALLER\""
+    if [[ -n "$ADV_HOMER_ARGS" ]]; then PEAK_CMD="$PEAK_CMD --homer-args \"$ADV_HOMER_ARGS\""; fi
     if [[ -n "$ADV_CTK_ARGS" ]]; then PEAK_CMD="$PEAK_CMD --ctk-args \"$ADV_CTK_ARGS\""; fi
     if [[ -n "$DIR_CTK" ]]; then
         PEAK_CMD="$PEAK_CMD --ctk-dir \"$OUTPUT_ROOT/$DIR_CTK\""
@@ -1291,7 +1295,9 @@ if [[ "$DEMUX" == "yes" ]]; then
         # Call script (using absolute path or relative to old pwd)
         # Call script with -n COMBINED to create COMBINED_peaks folder
         # Use -i 2_COLLAPSED_BED (relative to OUTPUT_ROOT) and --aggregate parameter
-        PEAK_CMD="bash $PEAK_SCRIPT -i 2_COLLAPSED_BED --aggregate -n COMBINED -p $PEAK_DIST -z $PEAK_SIZE -f $FRAG_LEN"
+        PEAK_CMD="bash $PEAK_SCRIPT -i 2_COLLAPSED_BED --aggregate -n COMBINED -p $PEAK_DIST -z $PEAK_SIZE -f $FRAG_LEN --peak-caller $PEAK_CALLER"
+        if [[ -n "$ADV_HOMER_ARGS" ]]; then PEAK_CMD="$PEAK_CMD --homer-args \"$ADV_HOMER_ARGS\""; fi
+        if [[ -n "$ADV_CTK_ARGS" ]]; then PEAK_CMD="$PEAK_CMD --ctk-args \"$ADV_CTK_ARGS\""; fi
         
         # Add --ctk-dir if CTK analysis was enabled
         if [[ "$RUN_CIMS" == "true" ]] || [[ "$RUN_CITS" == "true" ]]; then

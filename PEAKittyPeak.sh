@@ -42,8 +42,8 @@ function show_usage {
     echo "  -z <int>       Peak size (default: 20)"
     echo "  -f <int>       Fragment length (default: 25)"
     echo "  -n <str>       Base name for output (default: 'Combined')"
-    echo "  -a <str>       Additional HOMER findPeaks arguments (quoted string)
-  --peak-caller <str> Peak caller: homer (default) or ctk"
+    echo "  -a, --homer-args <str> Additional HOMER findPeaks arguments (quoted string)"
+    echo "  --peak-caller <str>    Peak caller: homer (default) or ctk"
     echo "  --ctk-dir <path>   Add CIMS/CITS site counts from CTK analysis"
     echo "  -g, --groups <file> Groups file for aggregation metrics"
     echo "  --cims-fdr <float> CIMS FDR threshold (default: 0.05)"
@@ -80,7 +80,7 @@ while [[ $# -gt 0 ]]; do
         -z) PEAK_SIZE="$2"; shift 2 ;;
         -f) FRAG_LEN="$2"; shift 2 ;;
         -n) BASE_NAME="$2"; shift 2 ;;
-        -a) ADV_HOMER_ARGS="$2"; shift 2 ;;
+        -a|--homer-args) ADV_HOMER_ARGS="$2"; shift 2 ;;
         --peak-caller) PEAK_CALLER="$2"; shift 2 ;;
         --ctk-args) ADV_CTK_ARGS="$2"; shift 2 ;;
         --ctk-dir) CTK_DIR="$2"; shift 2 ;;
