@@ -199,3 +199,80 @@ send_notification() {
         fi
     fi
 }
+
+# ── Parallel job helpers (moved from modules.sh v3.4) ────────────────────────
+
+# Check if GNU parallel is installed
+has_gnu_parallel() {
+    command -v parallel &>/dev/null && parallel --version 2>&1 | head -1 | grep -q "GNU parallel"
+}
+calculate_optimal_parallel_jobs() {
+    local user_threads="$1"
+    local input_file="$2"
+    local min_ram_per_job="${3:-2}"  # Default: 2GB per job minimum
+    
+    # Get available RAM in GB (use 'available' column from free)
+    local available_ram_gb
+    available_ram_gb=$(free -g 2>/dev/null | awk '/^Mem:/ {print $7}')
+    
+    # Fallback if free -g fails
+    if [[ -z "$available_ram_gb" ]] || [[ "$available_ram_gb" -eq 0 ]]; then
+        available_ram_gb=8  # Conservative default
+    fi
+    
+    # Get file size and estimate RAM per job
+    # Rule of thumb: jobs processing large files need more RAM
+    local file_lines=0
+    if [[ -f "$input_file" ]]; then
+        file_lines=$(wc -l < "$input_file" 2>/dev/null || echo 0)
+    fi
+    
+    # Estimate: for files with >1M lines, use more RAM per job
+    local ram_per_job=$min_ram_per_job
+    if [[ "$file_lines" -gt 1000000 ]]; then
+        ram_per_job=4  # Large files need 4GB per job
+    elif [[ "$file_lines" -gt 5000000 ]]; then
+        ram_per_job=6  # Very large files need 6GB per job
+    fi
+    
+    # Calculate RAM-based job limit
+    local ram_based_jobs=$((available_ram_gb / ram_per_job))
+    ram_based_jobs=$((ram_based_jobs > 0 ? ram_based_jobs : 1))  # At least 1
+    
+    # Final = minimum of user threads and RAM-based limit
+    local optimal_jobs=$((user_threads < ram_based_jobs ? user_threads : ram_based_jobs))
+    optimal_jobs=$((optimal_jobs > 0 ? optimal_jobs : 1))  # At least 1
+    
+    echo "$optimal_jobs"
+}
+
+# parse_groups_file - Parse groups.txt and output sample→group mapping
+# Input: groups_file path, output_map temp file path
+# Format: sample_name<TAB>group_name (lines starting with # are comments)
+parse_groups_file() {
+    local groups_file="$1"
+    local output_map="$2"
+    
+    log_info "Parsing groups file: $groups_file"
+    
+    > "$output_map"  # Clear output file
+    
+    while IFS=$'\t' read -r sample group || [[ -n "$sample" ]]; do
+        # Skip comments and empty lines
+        [[ "$sample" =~ ^#.*$ ]] && continue
+        [[ -z "$sample" ]] && continue
+        
+        # Strip common extensions
+        sample="${sample%.fastq.gz}"
+        sample="${sample%.fq.gz}"
+        sample="${sample%.fastq}"
+        sample="${sample%.fq}"
+        
+        # Write mapping
+        echo -e "${sample}\t${group}" >> "$output_map"
+    done < "$groups_file"
+    
+    local group_count=$(cut -f2 "$output_map" | sort -u | wc -l | tr -d ' ')
+    local sample_count=$(wc -l < "$output_map" | tr -d ' ')
+    log_info "Parsed $sample_count samples into $group_count groups"
+}
