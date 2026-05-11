@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # CLIPittyClip.sh - Modernized CLIP-seq Analysis Pipeline
-# Version 3.1.0
+# Version 3.4.0
 
 # ------------------------------------------------------------------
 # Initialization & Setup
@@ -45,7 +45,7 @@ function show_usage {
     echo ""
     echo "Usage: $0 [-i <input.fastq.gz> | -d <input_dir>] -x <index_dir> [options]"
     echo ""
-    echo "CLIPittyClip v3.3 - Modern CLIP-seq Analysis Pipeline"
+    echo "CLIPittyClip v3.4 - Modern CLIP-seq Analysis Pipeline"
     echo ""
     echo "REQUIRED INPUT (Choose one):"
     echo "  -i, --input-file <path>  Input FASTQ file (gzipped supported)"
@@ -171,7 +171,7 @@ if [[ $# -eq 0 ]]; then
     # Only show header if we are going to exit anyway
     echo "$separator_line"
     echo -e "${BLUE}CLIPittyClip: Modern CLIP-seq Analysis Pipeline${NC}"
-    echo "Version 3.1.0"
+    echo "Version 3.4.0"
     echo "Author: Soon Yi (Updated by Antigravity)"
     echo "Last updated: $(date +'%Y-%m-%d')"
     echo "$separator_line"
@@ -610,7 +610,7 @@ ulimit -n 2048 2>/dev/null || true
 if [[ "$CHILD_MODE" != "true" ]]; then
     # Print Clean Banner to Console
     console_msg "********************************************************************************"
-    console_msg "CLIPittyClip Standard Pipeline v3.3"
+    console_msg "CLIPittyClip Standard Pipeline v3.4"
     console_msg "Started: $(date '+%Y-%m-%d %H:%M:%S')"
     if [[ -n "$INPUT_DIR" ]]; then
         console_msg "Input Directory: $INPUT_DIR"
@@ -812,7 +812,7 @@ if [[ -n "$INPUT_DIR" ]]; then
     DIR_BG="3_BEDGRAPH"
     DIR_PEAKS="4_PEAKS"
     # Folder numbering: 5=CTK (if on), next=Clink (if on), OTHERS bumps accordingly
-    local _ctk_on=false; local _clink_on=false
+    _ctk_on=false; _clink_on=false
     { [[ "$RUN_CIMS" == "true" ]] || [[ "$RUN_CITS" == "true" ]]; } && _ctk_on=true
     [[ "$RUN_CLINK" == "true" ]] && _clink_on=true
     if [[ "$_ctk_on" == "true" ]] && [[ "$_clink_on" == "true" ]]; then
@@ -1308,7 +1308,7 @@ if [[ "$DEMUX" == "yes" ]]; then
     DIR_BG="3_BEDGRAPH"
     DIR_PEAKS="4_PEAKS"
     # Folder numbering: 5=CTK (if on), next=Clink (if on), OTHERS bumps accordingly
-    local _ctk_on=false; local _clink_on=false
+    _ctk_on=false; _clink_on=false
     { [[ "$RUN_CIMS" == "true" ]] || [[ "$RUN_CITS" == "true" ]]; } && _ctk_on=true
     [[ "$RUN_CLINK" == "true" ]] && _clink_on=true
     if [[ "$_ctk_on" == "true" ]] && [[ "$_clink_on" == "true" ]]; then
@@ -1705,6 +1705,22 @@ if [[ "$DEMUX" == "yes" ]]; then
     exit 0
 fi
 
+# ──────────────────────────────────────────────────────────────────────────────
+# process_sample()
+# ──────────────────────────────────────────────────────────────────────────────
+# Per-sample analysis: dedup → adapter trim → ncRNA filter → align → collapse
+# → bedgraph → peak calling → CTK/Clink → organise output → cleanup.
+#
+# Reads from globals set by the caller (INPUT_FILE, BASENAME, GENOME_INDEX,
+# THREADS, UMI_LEN, WORK_DIR, OUTPUT_ROOT, …).  All side-effects (directory
+# creation, file moves, LOG_FILE redirect) are intentional and expected.
+#
+# Called directly for single-file mode; child processes (batch/demux) also
+# enter here after the parent subshell cd's into WORK_DIR and re-invokes the
+# script with --child.
+# ──────────────────────────────────────────────────────────────────────────────
+process_sample() {
+
 # Standard Pipeline (Single Sample)
 # If CHILD_MODE, header is suppressed.
 # Main Banner logic is now handled at the top of the script.
@@ -1721,7 +1737,9 @@ if [[ "$BASENAME" == "$INPUT_FILE" ]]; then
     BASENAME=$(basename "$INPUT_FILE" .fq.gz)
 fi
 if [[ -n "$EXP_ID" ]]; then
-    BASENAME="$EXP_ID"
+    # Use only the final path component so -o /abs/path doesn't inject a
+    # leading slash into every "${WORK_DIR}/${BASENAME}_*" expansion.
+    BASENAME=$(basename "$EXP_ID")
 fi
 
 # ── Deduplication ────────────────────────────────────────────────────────────────
@@ -2064,7 +2082,7 @@ if [[ "$CHILD_MODE" != "true" ]]; then
     # Clink Analysis output
     if [[ -d "Clink_Analysis" ]]; then
         # Determine folder number: 5_Clink if no CTK, 6_Clink if CTK also ran
-        local _clink_dest
+        _clink_dest=""
         if [[ -n "${SF_DIR_CTK:-}" ]]; then
             _clink_dest="6_Clink"
         else
@@ -2202,3 +2220,12 @@ if [[ "$CHILD_MODE" != "true" ]]; then
 fi
 
 send_notification "CLIPittyClip: $BASENAME" "Analysis finished successfully. Duration: ${H}h ${M}m ${S}s"
+
+} # end process_sample()
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Entry point for single-file and child (--child) mode.
+# Batch orchestration (directory / demux) exits above; only this path falls
+# through to here.
+# ──────────────────────────────────────────────────────────────────────────────
+process_sample

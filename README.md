@@ -3,7 +3,7 @@
 </p>
 
 # CLIPittyClip: Modern CLIP-seq Analysis Pipeline
-**Version 3.3.0**
+**Version 3.4.0**
 
 A comprehensive, single-command CLIP-seq analysis pipeline from raw FASTQ to peaks and crosslink sites. Supports iCLIP, irCLIP, eCLIP, and related variant protocols.
 
