@@ -2070,7 +2070,7 @@ MUTATION_FILE="${BASENAME}_mutations.txt"
 #     run separately below ONLY when --run-cims or --run-cits is requested —
 #     they produce their own CTK_COLLAPSED_BED for CITS.pl/CIMS.pl and do
 #     NOT replace this BED.
-log_info "PCR dedup: collapse.py (Clink) → bedtools bamtobed → 2_COLLAPSED_BED"
+log_info "PCR dedup: collapse.py (Clink) → bedtools bamtobed → 02_COLLAPSED_BED"
 mkdir -p "Clink_Analysis"
 CLINK_DEDUP_BAM="Clink_Analysis/${BASENAME}_dedup.bam"
 run_clink_collapse "$BAM_FILE" "$CLINK_DEDUP_BAM" "$CLINK_UMI_LEN" "$THREADS" || true

@@ -2711,11 +2711,11 @@ run_group_ctk_analysis() {
     # 4. Determine CTK output folder name
     local ctk_folder_name
     if [[ "$run_cims" == "true" ]] && [[ "$run_cits" == "true" ]]; then
-        ctk_folder_name="5_CTK_Analysis"
+        ctk_folder_name="05_CTK_Analysis"
     elif [[ "$run_cims" == "true" ]]; then
-        ctk_folder_name="5_CIMS_Analysis"
+        ctk_folder_name="05_CIMS_Analysis"
     elif [[ "$run_cits" == "true" ]]; then
-        ctk_folder_name="5_CITS_Analysis"
+        ctk_folder_name="05_CITS_Analysis"
     fi
     
     # 5. Get unique groups and process alphabetically (skip unknown)
