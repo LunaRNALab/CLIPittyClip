@@ -163,7 +163,7 @@ All results land in a single numbered-folder hierarchy next to your input (or at
 │
 ├── 05_CTK_Analysis/         ← CTK crosslink sites (--run-cims-cits)
 │   ├── {sample}/CIMS/ CITS/
-│   └── GROUP_{group}/CIMS/ CITS/  ← group-pooled results (--ctk-group)
+│   └── GROUP_{group}/CIMS/ CITS/  ← group-pooled results (--group-xlsite)
 │
 ├── 05_Clink/ or 06_Clink/  ← Clink crosslink sites (--run-clink)
 │   ├── {sample}/
@@ -246,8 +246,7 @@ Run `CLIPittyClip.sh --help` for full usage.
 | Short | Long | Default | Description |
 |-------|------|---------|-------------|
 | `-g` | `--groups` | — | Groups file for bedgraph/peak aggregation (`SampleName\tGroupName`) |
-| — | `--ctk-group` | off | Pool samples by group before running CTK crosslink analysis |
-| — | `--group-xlsite` | off | Pool samples by group for Clink CITS/CIMS (and CTK if enabled). Per-sample dedup BAMs are produced first, then merged by group for pileup → CITS/CIMS. Requires `-g`. |
+| — | `--group-xlsite` | off | Pool samples by group for crosslink-site analysis — CTK CIMS/CITS and/or Clink, whichever is enabled. Per-sample dedup BAMs are produced first, then merged by group for pileup → CITS/CIMS. Requires `-g`. (`--ctk-group` is a deprecated alias.) |
 
 ### Crosslink Site Analysis
 
@@ -324,7 +323,7 @@ Pool replicates before running CITS/CIMS to increase depth:
 ```bash
 # CTK
 CLIPittyClip.sh -i pool.fq.gz -b barcodes.txt -x index \
-    --run-cims-cits -g groups.txt --ctk-group
+    --run-cims-cits -g groups.txt --group-xlsite
 
 # Clink
 CLIPittyClip.sh -d /path/to/samples/ -x index \
@@ -461,7 +460,7 @@ PEAKittyPeak.sh -i ./2_COLLAPSED_BED -n Combined --aggregate \
 PEAKittyPeak.sh --wizard
 ```
 
-Key options: `-i` (BED dir), `-n` (output prefix), `--aggregate` / `--no-aggregate`, `--peak-caller`, `--peak-caller-args`, `--ctk-dir`, `--ctk-group`, `-p` (min peak distance), `-z` (peak size), `-f` (fragment length)
+Key options: `-i` (BED dir), `-n` (output prefix), `--aggregate` / `--no-aggregate`, `--group-peaks`, `--peak-caller`, `--peak-caller-args`, `--ctk-dir`, `-p` (min peak distance), `-z` (peak size), `-f` (fragment length)
 
 ---
 

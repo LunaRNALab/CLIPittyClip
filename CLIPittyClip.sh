@@ -105,9 +105,9 @@ function show_usage {
     echo "  -f, --flank <int>        Flanked BED nucleotides (default: 10)"
     echo "  --no-motif               Skip flanked BED generation"
     echo "  -g, --groups <file>      Groups file for bedgraph/peak grouping"
-    echo "  --ctk-group              Enable group CTK analysis (pools samples in groups.txt)
-  --group-xlsite           Group crosslink site analysis for CTK + Clink (requires -g).
-                             Implies --ctk-group for CTK; also runs group Clink CITS/CIMS."
+    echo "  --group-xlsite           Pool samples by group for crosslink-site analysis (CTK"
+    echo "                             CIMS/CITS and/or Clink, whichever is enabled). Requires -g."
+    echo "                             (--ctk-group is a deprecated alias for this flag.)"
     echo "  --xl-bigwig              Generate per-sample crosslink-site bigWig files (03_COVERAGE/BigWig/)."
     echo "                             Requires bedGraphToBigWig in PATH. Suitable for BindingSiteFinder."
     echo "  -s, --sample <int>       Test mode: process only first N reads"
@@ -174,10 +174,10 @@ CITS_PVALUE="0.05"
 CITS_GAP="25"
 RUN_MOTIF="yes"
 MOTIF_FLANK="10"
-CTK_GROUPS_FILE=""  # Optional: group samples for CIMS/CITS aggregation (set by --ctk-group)
-CTK_GROUP_MODE="false"  # Explicit flag for group CTK analysis
+CTK_GROUPS_FILE=""  # Optional: group samples for CIMS/CITS aggregation (set via --group-xlsite)
+CTK_GROUP_MODE="false"  # Derived from --group-xlsite when CTK (CIMS/CITS) is enabled
 GROUPS_FILE=""      # Standard Groups File for BedGraph/Matrix aggregation
-GROUP_XLSITE="false"    # --group-xlsite: group crosslink analysis for CTK + Clink
+GROUP_XLSITE="false"    # --group-xlsite: group crosslink analysis for CTK and/or Clink, whichever is enabled
 
 # Capture Start Time (Seconds) for duration calculation
 PIPELINE_START=$(date +%s)
@@ -233,7 +233,7 @@ while [[ $# -gt 0 ]]; do
         -f|--flank) MOTIF_FLANK="$2"; shift 2 ;;
         --no-motif) RUN_MOTIF="no"; shift ;;
         -g|--groups) GROUPS_FILE="$2"; shift 2 ;;
-        --ctk-group) CTK_GROUP_MODE="true"; shift ;;
+        --ctk-group) echo "[WARNING] --ctk-group is deprecated; use --group-xlsite instead (groups CTK and/or Clink, whichever is enabled)." >&2; GROUP_XLSITE="true"; shift ;;
         --group-xlsite) GROUP_XLSITE="true"; shift ;;
         -s|--sample) SAMPLE_SIZE="$2"; shift 2 ;;
         -b|--barcodes) BARCODE_FILE="$2"; DEMUX="yes"; shift 2 ;;
@@ -349,7 +349,6 @@ if [[ "$WIZARD_MODE" == "true" ]]; then
 
     # Grouping
     [[ -n "$WIZ_GROUPS_FILE" ]]           && GROUPS_FILE="$WIZ_GROUPS_FILE"
-    [[ "$WIZ_CTK_GROUP" == "true" ]]      && CTK_GROUP_MODE="true"
     [[ "$WIZ_GROUP_XLSITE" == "true" ]]   && GROUP_XLSITE="true"
 
     # Output / runtime
@@ -517,18 +516,7 @@ if [[ "$GROUP_XLSITE" == "true" ]]; then
     fi
 fi
 
-# Validate groups file (requires --run-cims or --run-cits)
-if [[ "$CTK_GROUP_MODE" == "true" ]] && [[ -z "$GROUPS_FILE" ]]; then
-    log_error "--ctk-group requires a groups file (-g). Please provide a groups file."
-    show_usage
-    exit 1
-fi
-
 if [[ -n "$GROUPS_FILE" ]]; then
-    if [[ "$RUN_CIMS" != "true" ]] && [[ "$RUN_CITS" != "true" ]] && [[ "$CTK_GROUP_MODE" == "true" ]]; then
-        log_warning "--ctk-group requires --run-cims and/or --run-cits. Group CTK will be disabled."
-        CTK_GROUP_MODE="false"
-    fi
     if [[ ! -f "$GROUPS_FILE" ]]; then
         log_error "Groups file not found: $GROUPS_FILE"
         exit 1
@@ -1531,7 +1519,7 @@ if [[ "$DEMUX" == "yes" ]]; then
         mkdir -p "$OUTPUT_ROOT/$DIR_OTHERS/STAR_OUTPUT"
     fi
 
-    # Run Group-based CTK Analysis (OPT-IN ONLY with --ctk-group flag)
+    # Run Group-based CTK Analysis (OPT-IN ONLY via --group-xlsite)
     if [[ "$CTK_GROUP_MODE" == "true" ]] && [[ -n "$GROUPS_FILE" ]]; then
         # Run in WORK_DIR subshell to prevent CITS.pl/tag2profile.pl CWD pollution
         (cd "$WORK_DIR" && run_group_ctk_analysis "$GROUPS_FILE" "$OUTPUT_ROOT" "$GENOME_INDEX" \

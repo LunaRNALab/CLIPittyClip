@@ -293,8 +293,7 @@ _cc_knob_registry() {
 6|no_motif|Skip Motif|WIZ_NO_MOTIF|yn|false|Skip flanked BED generation|--no-motif
 6|flank|Flank|WIZ_FLANK|int|10|Flanked BED nucleotides|-f
 7|groups_file|Groups File|WIZ_GROUPS_FILE|str||Path to groups file|-g
-7|ctk_group|CTK Group|WIZ_CTK_GROUP|yn|false|Pool samples for CTK aggregation|--ctk-group
-7|group_xlsite|Group Xlsite|WIZ_GROUP_XLSITE|yn|false|Group crosslink-site analysis|--group-xlsite
+7|group_xlsite|Group Xlsite|WIZ_GROUP_XLSITE|yn|false|Group crosslink-site analysis (CTK and/or Clink)|--group-xlsite
 8|output|Output Name|WIZ_OUTPUT|str||Output folder name (blank=INPUT_output)|-o
 8|keep|Keep Intermediate|WIZ_KEEP|yn|false|Keep intermediate files|-k
 8|sample_size|Sample Size|WIZ_SAMPLE_SIZE|str||Test mode: process N reads only|-s
@@ -740,7 +739,6 @@ run_wizard_clipittyclip() {
     WIZ_NO_MOTIF="false"
     WIZ_FLANK="10"
     WIZ_GROUPS_FILE=""
-    WIZ_CTK_GROUP="false"
     WIZ_GROUP_XLSITE="false"
     WIZ_KEEP="false"
     WIZ_SAMPLE_SIZE=""
@@ -874,9 +872,7 @@ run_wizard_clipittyclip() {
             prompt_yesno "  Provide a groups file for aggregation?" "n" _yn
             if [[ "$_yn" == "y" ]]; then
                 prompt_file_path "  Enter path to groups file: " WIZ_GROUPS_FILE || return 1
-                prompt_yesno "  Enable --ctk-group (pool samples for CTK)?" "n" _yn
-                [[ "$_yn" == "y" ]] && WIZ_CTK_GROUP="true"
-                prompt_yesno "  Enable --group-xlsite (group crosslink-site analysis)?" "n" _yn
+                prompt_yesno "  Enable --group-xlsite (pool samples for CTK and/or Clink crosslink-site analysis)?" "n" _yn
                 [[ "$_yn" == "y" ]] && WIZ_GROUP_XLSITE="true"
             fi
         fi
@@ -958,7 +954,7 @@ run_wizard_clipittyclip() {
     export WIZ_RUN_CIMS WIZ_RUN_CITS WIZ_CIMS_ITER WIZ_CIMS_FDR WIZ_CITS_PVAL WIZ_CITS_GAP
     export WIZ_RUN_CLINK WIZ_CLINK_UMI_LEN WIZ_CLINK_FDR WIZ_CLINK_MIN_COV WIZ_CLINK_MULTI_MAP
     export WIZ_NO_MOTIF WIZ_FLANK
-    export WIZ_GROUPS_FILE WIZ_CTK_GROUP WIZ_GROUP_XLSITE
+    export WIZ_GROUPS_FILE WIZ_GROUP_XLSITE
     export WIZ_OUTPUT WIZ_KEEP WIZ_SAMPLE_SIZE WIZ_NOTIFICATION WIZ_XL_BIGWIG
     export CLIPITTY_EQUIV_CMD
 
