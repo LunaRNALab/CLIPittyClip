@@ -464,23 +464,23 @@ if [[ "$CHILD_MODE" != "true" ]]; then
         fi
     fi
     WORK_DIR="${OUTPUT_ROOT}/TEMP"
-    mkdir -p "${OUTPUT_ROOT}/REPORTS" "$WORK_DIR"
+    mkdir -p "${OUTPUT_ROOT}/00_REPORTS" "$WORK_DIR"
 fi
 
 # ------------------------------------------------------------------
 # Log File Initialization
 # ------------------------------------------------------------------
-# Logs go directly into OUTPUT_ROOT/REPORTS/ — never into CWD.
+# Logs go directly into OUTPUT_ROOT/00_REPORTS/ — never into CWD.
 # Child processes suppress logging (parent captures everything).
 if [[ "$CHILD_MODE" == "true" ]]; then
     LOG_FILE="/dev/null"
     TEMP_CONSOLE_LOG=""
 else
-    TEMP_CONSOLE_LOG="${OUTPUT_ROOT}/REPORTS/console_output.log"
+    TEMP_CONSOLE_LOG="${OUTPUT_ROOT}/00_REPORTS/console_output.log"
     > "$TEMP_CONSOLE_LOG"
     exec > >(tee -a "$TEMP_CONSOLE_LOG") 2>&1
 
-    LOG_FILE="${OUTPUT_ROOT}/REPORTS/detailed_output.log"
+    LOG_FILE="${OUTPUT_ROOT}/00_REPORTS/detailed_output.log"
     > "${LOG_FILE}"
 fi
 
@@ -913,7 +913,7 @@ if [[ -n "$INPUT_DIR" ]]; then
         DIR_CTK=""; DIR_CLINK=""; DIR_OTHERS="05_OTHERS"
     fi
     DIR_REPORTS="00_REPORTS"
-    DIR_PEAK_LOGS="REPORTS/PEAK"
+    DIR_PEAK_LOGS="$DIR_REPORTS/PEAK"
     DIR_IND_PEAK_LOGS="$DIR_PEAK_LOGS"
     
     # Create base directories (CTK/Clink folders created conditionally during aggregation)
@@ -1497,8 +1497,8 @@ if [[ "$DEMUX" == "yes" ]]; then
         DIR_CTK=""; DIR_CLINK=""; DIR_OTHERS="05_OTHERS"
     fi
     DIR_REPORTS="00_REPORTS"
-    DIR_PEAK_LOGS="REPORTS/PEAK"
-    DIR_IND_PEAK_LOGS="REPORTS/PEAK/INDIVIDUAL_SAMPLES"
+    DIR_PEAK_LOGS="$DIR_REPORTS/PEAK"
+    DIR_IND_PEAK_LOGS="$DIR_PEAK_LOGS/INDIVIDUAL_SAMPLES"
     
     # Create Central Output Directories (CTK folders created conditionally during aggregation)
     # Note: 0_DEMUX_FASTQ is only created when -k (--keep) is passed
@@ -1731,7 +1731,7 @@ if [[ "$DEMUX" == "yes" ]]; then
         cd "$OUTPUT_ROOT" || exit 1
 
         # Define separate log for peak calling details
-        PEAK_LOG="REPORTS/PEAK/Combined_PeakCalling.log"
+        PEAK_LOG="$DIR_PEAK_LOGS/Combined_PeakCalling.log"
         console_msg "  > Detailed Peak Log: $PEAK_LOG"
 
         # Call script (using absolute path or relative to old pwd)
@@ -1760,7 +1760,7 @@ if [[ "$DEMUX" == "yes" ]]; then
         fi
         
         # Force hardcoded path to ensure correct filename (bypass potential variable issues)
-        eval "$PEAK_CMD" > "REPORTS/PEAK/Combined_PeakCalling.log" 2>&1
+        eval "$PEAK_CMD" > "$DIR_PEAK_LOGS/Combined_PeakCalling.log" 2>&1
         
         # (No Symlink to remove)
         
@@ -1783,7 +1783,7 @@ if [[ "$DEMUX" == "yes" ]]; then
             GRP_PEAK_CMD="bash $PEAK_SCRIPT -i 02_COLLAPSED_BED --group-peaks \"$GROUPS_FILE\" -p $PEAK_DIST -z $PEAK_SIZE -f $FRAG_LEN --peak-caller \"$PEAK_CALLER\""
             if [[ -n "$ADV_PEAK_CALLER_ARGS" ]]; then GRP_PEAK_CMD="$GRP_PEAK_CMD --peak-caller-args \"$ADV_PEAK_CALLER_ARGS\""; fi
 
-            eval "$GRP_PEAK_CMD" >> "REPORTS/PEAK/Combined_PeakCalling.log" 2>&1
+            eval "$GRP_PEAK_CMD" >> "$DIR_PEAK_LOGS/Combined_PeakCalling.log" 2>&1
 
             grp_found=0
             for grp_dir in *_peaks; do
@@ -2473,7 +2473,7 @@ if [[ "$CHILD_MODE" != "true" ]]; then
     console_msg "\n[SUCCESS] Pipeline finished."
     console_msg "End Time: $(date '+%Y-%m-%d %H:%M:%S')"
     console_msg "Total Duration: ${H}h ${M}m ${S}s"
-    # console_output.log is already at OUTPUT_ROOT/REPORTS/ — created there at startup.
+    # console_output.log is already at OUTPUT_ROOT/00_REPORTS/ — created there at startup.
 fi
 
 send_notification "CLIPittyClip: $BASENAME" "Analysis finished successfully. Duration: ${H}h ${M}m ${S}s"
